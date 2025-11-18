@@ -1,0 +1,16 @@
+services:
+  cooking-recommender:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: cooking-recommender
+    volumes:
+      - ./data:/app/data
+      - ./output:/app/output
+      - ./.env:/app/.env
+    environment:
+      - DISPLAY=:99
+      - PYTHONUNBUFFERED=1
+    shm_size: '2gb'
+    stdin_open: true
+    tty: true
