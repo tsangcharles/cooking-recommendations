@@ -9,3 +9,5 @@ output/*.jpg
 output/*.png
 output/*.txt
 *.log
+venv/
+.vscode/

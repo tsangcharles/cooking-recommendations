@@ -29,4 +29,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-CMD ["python", "src/main.py"]
+# Ensure data and output directories exist
+RUN mkdir -p /app/data /app/output
+
+# Expose port for web interface
+EXPOSE 8000
+
+# Run the web server
+CMD ["python", "src/api.py"]

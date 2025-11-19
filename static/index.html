@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>No Frills Cooking Recommendations 🍽️</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🍽️ No Frills Cooking Recommendations</h1>
+            <p class="subtitle">Get personalized meal plans based on weekly flyer deals</p>
+        </header>
+
+        <main>
+            <!-- Configuration Panel -->
+            <section class="config-panel">
+                <h2>📋 Configuration</h2>
+                <form id="configForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="postalCode">Postal Code</label>
+                            <input type="text" id="postalCode" name="postalCode" placeholder="L6E1T8" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="numPeople">Number of People</label>
+                            <input type="number" id="numPeople" name="numPeople" min="1" max="10" value="2" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="numMeals">Number of Meals</label>
+                            <input type="number" id="numMeals" name="numMeals" min="1" max="21" value="7" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="cuisine">Cuisine Preference</label>
+                            <input type="text" id="cuisine" name="cuisine" placeholder="Chinese, Italian, Mexican..." required>
+                        </div>
+
+                        <div class="form-group checkbox-group">
+                            <label>
+                                <input type="checkbox" id="headless" name="headless" checked>
+                                <span>Headless Mode (Run browser in background)</span>
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Action Buttons -->
+            <section class="actions">
+                <button id="generateBtn" class="btn btn-primary">
+                    <span class="btn-icon">🎲</span>
+                    <span>Generate Recommendations</span>
+                </button>
+                <button id="discordBtn" class="btn btn-discord" disabled>
+                    <span class="btn-icon">💬</span>
+                    <span>Send to Discord</span>
+                </button>
+            </section>
+
+            <!-- Status Indicator -->
+            <section class="status-section" id="statusSection" style="display: none;">
+                <div class="status-indicator">
+                    <div class="spinner"></div>
+                    <span id="statusText">Preparing...</span>
+                </div>
+            </section>
+
+            <!-- Results Panel -->
+            <section class="results-panel" id="resultsPanel" style="display: none;">
+                <h2>✨ Your Meal Plan</h2>
+                
+                <div class="results-content">
+                    <div class="flyer-section" id="flyerSection" style="display: none;">
+                        <h3>📄 Flyer</h3>
+                        <img id="flyerImage" alt="No Frills Flyer" class="flyer-image">
+                    </div>
+                    
+                    <div class="recommendations-section">
+                        <h3>🍳 Recommendations</h3>
+                        <div id="recommendations" class="recommendations-text"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Made with ❤️ for savvy grocery shoppers</p>
+        </footer>
+    </div>
+
+    <!-- Discord Modal -->
+    <div id="discordModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>📤 Send to Discord</h2>
+            <p>Enter your Discord webhook URL to receive these recommendations in your Discord server:</p>
+            <form id="discordForm">
+                <div class="form-group">
+                    <label for="webhookUrl">Discord Webhook URL</label>
+                    <input type="url" id="webhookUrl" name="webhookUrl" 
+                           placeholder="https://discord.com/api/webhooks/..." required>
+                    <small>Don't have a webhook? <a href="https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks" target="_blank">Learn how to create one</a></small>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                    <button type="submit" class="btn btn-discord">Send</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>

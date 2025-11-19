@@ -4,6 +4,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: cooking-recommender
+    ports:
+      - "8000:8000"
     volumes:
       - ./data:/app/data
       - ./output:/app/output
