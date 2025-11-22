@@ -34,15 +34,35 @@ async function checkForExistingResults() {
         
         if (status.has_results) {
             await displayRecommendations();
-            document.getElementById('discordBtn').disabled = false;
+            setDiscordBtnDisabled(false);
         }
     } catch (error) {
         console.error('Error checking results:', error);
     }
 }
 
+// Helper to safely enable/disable the (now optional) Discord button
+function setDiscordBtnDisabled(state) {
+    const btn = document.getElementById('discordBtn');
+    if (btn) btn.disabled = state;
+}
+
+// General helper to safely set `disabled` on an element or element id
+function safeSetDisabled(elOrId, state) {
+    let el = null;
+    if (!elOrId) return;
+    if (typeof elOrId === 'string') {
+        el = document.getElementById(elOrId);
+    } else {
+        el = elOrId;
+    }
+    if (el) el.disabled = state;
+}
+
 // Generate recommendations
-document.getElementById('generateBtn').addEventListener('click', async () => {
+const generateBtn = document.getElementById('generateBtn');
+if (generateBtn) {
+    generateBtn.addEventListener('click', async () => {
     const form = document.getElementById('configForm');
     
     if (!form.checkValidity()) {
@@ -50,20 +70,34 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
         return;
     }
     
+    const postalCode = document.getElementById('postalCode');
+    const numPeople = document.getElementById('numPeople');
+    const numMeals = document.getElementById('numMeals');
+    const cuisine = document.getElementById('cuisine');
+    const headless = document.getElementById('headless');
+    
+    if (!postalCode || !numPeople || !numMeals || !cuisine || !headless) {
+        showError('Form elements not found');
+        return;
+    }
+    
     const request = {
-        postal_code: document.getElementById('postalCode').value.trim(),
-        num_people: parseInt(document.getElementById('numPeople').value),
-        num_meals: parseInt(document.getElementById('numMeals').value),
-        cuisine: document.getElementById('cuisine').value.trim(),
-        headless: document.getElementById('headless').checked
+        postal_code: postalCode.value.trim(),
+        num_people: parseInt(numPeople.value),
+        num_meals: parseInt(numMeals.value),
+        cuisine: cuisine.value.trim(),
+        headless: headless.checked
     };
     
     try {
-        document.getElementById('generateBtn').disabled = true;
-        document.getElementById('discordBtn').disabled = true;
-        document.getElementById('resultsPanel').style.display = 'none';
-        document.getElementById('statusSection').style.display = 'block';
-        document.getElementById('statusText').textContent = 'Initializing...';
+    safeSetDisabled(generateBtn, true);
+    setDiscordBtnDisabled(true);
+        const resultsPanel = document.getElementById('resultsPanel');
+        if (resultsPanel) resultsPanel.style.display = 'none';
+        const statusSection = document.getElementById('statusSection');
+        const statusText = document.getElementById('statusText');
+        if (statusSection) statusSection.style.display = 'block';
+        if (statusText) statusText.textContent = 'Initializing...';
         
         const response = await fetch('/api/generate', {
             method: 'POST',
@@ -76,15 +110,20 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
             throw new Error(error.detail || 'Failed to start generation');
         }
         
+        // Mark that we want to auto-send to Discord when generation completes
+        window.__autoSendToDiscord = true;
+
         // Start polling for status
         pollStatus();
         
     } catch (error) {
         showError(error.message);
-        document.getElementById('generateBtn').disabled = false;
-        document.getElementById('statusSection').style.display = 'none';
+            safeSetDisabled(generateBtn, false);
+        const statusSection = document.getElementById('statusSection');
+        if (statusSection) statusSection.style.display = 'none';
     }
 });
+    }
 
 // Poll for status updates
 let statusPollingInterval = null;
@@ -96,17 +135,42 @@ function pollStatus() {
             const status = await response.json();
             
             if (status.status === 'processing') {
-                document.getElementById('statusText').textContent = status.status_message || 'Processing...';
+                const statusText = document.getElementById('statusText');
+                if (statusText) statusText.textContent = status.status_message || 'Processing...';
             } else if (status.status === 'completed') {
                 clearInterval(statusPollingInterval);
-                document.getElementById('statusSection').style.display = 'none';
-                document.getElementById('generateBtn').disabled = false;
+                const statusSection = document.getElementById('statusSection');
+                if (statusSection) statusSection.style.display = 'none';
+                safeSetDisabled(generateBtn, false);
                 await displayRecommendations();
                 showSuccess('Recommendations generated successfully!');
+
+                // If user requested auto-send, try to send to Discord now
+                try {
+                    if (window.__autoSendToDiscord) {
+                        const webhookInput = document.getElementById('webhookUrl');
+                        const webhookUrl = webhookInput ? webhookInput.value.trim() : '';
+
+                        if (webhookUrl) {
+                            await sendToDiscord(webhookUrl);
+                        } else {
+                            // No webhook configured — prompt user with the modal. When they submit,
+                            // the form handler will call sendToDiscord.
+                            const modal = document.getElementById('discordModal');
+                            if (modal) modal.style.display = 'block';
+                        }
+                        // reset flag
+                        window.__autoSendToDiscord = false;
+                    }
+                } catch (err) {
+                    console.error('Auto-send to Discord failed:', err);
+                    showError('Auto-send to Discord failed: ' + (err.message || err));
+                }
             } else if (status.status === 'error') {
                 clearInterval(statusPollingInterval);
-                document.getElementById('statusSection').style.display = 'none';
-                document.getElementById('generateBtn').disabled = false;
+                const statusSection = document.getElementById('statusSection');
+                if (statusSection) statusSection.style.display = 'none';
+                if (generateBtn) generateBtn.disabled = false;
                 showError(status.status_message || `Error: ${status.error}`);
             }
         } catch (error) {
@@ -123,9 +187,11 @@ function startStatusPolling() {
             const status = await response.json();
             
             if (status.status === 'processing' && statusPollingInterval === null) {
-                document.getElementById('generateBtn').disabled = true;
-                document.getElementById('statusSection').style.display = 'block';
-                document.getElementById('statusText').textContent = status.status_message || 'Processing...';
+                        safeSetDisabled(generateBtn, true);
+                const statusSection = document.getElementById('statusSection');
+                const statusText = document.getElementById('statusText');
+                if (statusSection) statusSection.style.display = 'block';
+                if (statusText) statusText.textContent = status.status_message || 'Processing...';
                 pollStatus();
             }
         } catch (error) {
@@ -140,20 +206,24 @@ async function displayRecommendations() {
         const response = await fetch('/api/recommendations');
         const data = await response.json();
         
-        document.getElementById('recommendations').textContent = data.recommendations;
-        document.getElementById('resultsPanel').style.display = 'block';
+        const recommendations = document.getElementById('recommendations');
+        const resultsPanel = document.getElementById('resultsPanel');
+        if (recommendations) recommendations.textContent = data.recommendations;
+        if (resultsPanel) resultsPanel.style.display = 'block';
         
         // Show flyer image
         if (data.flyer_image) {
-            document.getElementById('flyerImage').src = `/api/flyer-image?t=${Date.now()}`;
-            document.getElementById('flyerSection').style.display = 'block';
+            const flyerImage = document.getElementById('flyerImage');
+            const flyerSection = document.getElementById('flyerSection');
+            if (flyerImage) flyerImage.src = `/api/flyer-image?t=${Date.now()}`;
+            if (flyerSection) flyerSection.style.display = 'block';
         }
         
-        // Enable Discord button
-        document.getElementById('discordBtn').disabled = false;
+        // Enable Discord button (no-op if button was removed)
+        setDiscordBtnDisabled(false);
         
         // Scroll to results
-        document.getElementById('resultsPanel').scrollIntoView({ behavior: 'smooth' });
+        if (resultsPanel) resultsPanel.scrollIntoView({ behavior: 'smooth' });
         
     } catch (error) {
         console.error('Error displaying recommendations:', error);
@@ -167,17 +237,23 @@ const discordBtn = document.getElementById('discordBtn');
 const closeBtn = document.querySelector('.close');
 const cancelBtn = document.getElementById('cancelBtn');
 
-discordBtn.addEventListener('click', () => {
-    modal.style.display = 'block';
-});
+if (discordBtn) {
+    discordBtn.addEventListener('click', () => {
+        if (modal) modal.style.display = 'block';
+    });
+}
 
-closeBtn.addEventListener('click', () => {
-    modal.style.display = 'none';
-});
+if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+        if (modal) modal.style.display = 'none';
+    });
+}
 
-cancelBtn.addEventListener('click', () => {
-    modal.style.display = 'none';
-});
+if (cancelBtn) {
+    cancelBtn.addEventListener('click', () => {
+        if (modal) modal.style.display = 'none';
+    });
+}
 
 window.addEventListener('click', (e) => {
     if (e.target === modal) {
@@ -186,45 +262,64 @@ window.addEventListener('click', (e) => {
 });
 
 // Send to Discord
-document.getElementById('discordForm').addEventListener('submit', async (e) => {
+// Centralized send-to-discord helper used by the modal and auto-send flow
+async function sendToDiscord(webhookUrl) {
+    if (!webhookUrl) {
+        throw new Error('Discord webhook URL is required');
+    }
+
+    // Provide lightweight UI feedback
+    showAlert('Sending recommendations to Discord...', 'info');
+
+    const response = await fetch('/api/send-discord', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ webhook_url: webhookUrl })
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.detail || 'Failed to send to Discord');
+    }
+
+    showSuccess('Successfully sent to Discord! 🎉');
+}
+
+// Modal form still uses the centralized helper so user can supply a webhook when needed
+const discordForm = document.getElementById('discordForm');
+if (discordForm) {
+    discordForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    
-    const webhookUrl = document.getElementById('webhookUrl').value.trim();
-    
+
+    const webhookUrlInput = document.getElementById('webhookUrl');
+    if (!webhookUrlInput) return;
+    const webhookUrl = webhookUrlInput.value.trim();
+
     if (!webhookUrl) {
         showError('Please enter a Discord webhook URL');
         return;
     }
-    
+
     try {
         const submitBtn = e.target.querySelector('button[type="submit"]');
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Sending...';
-        
-        const response = await fetch('/api/send-discord', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ webhook_url: webhookUrl })
-        });
-        
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || 'Failed to send to Discord');
-        }
-        
-        modal.style.display = 'none';
-        showSuccess('Successfully sent to Discord! 🎉');
-        
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Send';
-        
+        safeSetDisabled(submitBtn, true);
+        if (submitBtn) submitBtn.textContent = 'Sending...';
+
+        await sendToDiscord(webhookUrl);
+
+        const modal = document.getElementById('discordModal');
+        if (modal) modal.style.display = 'none';
+
+        safeSetDisabled(submitBtn, false);
+        if (submitBtn) submitBtn.textContent = 'Send';
     } catch (error) {
         showError(error.message);
         const submitBtn = e.target.querySelector('button[type="submit"]');
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Send';
+        safeSetDisabled(submitBtn, false);
+        if (submitBtn) submitBtn.textContent = 'Send';
     }
-});
+    });
+}
 
 // Utility functions for notifications
 function showSuccess(message) {

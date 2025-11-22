@@ -2,7 +2,8 @@
 import os
 import sys
 from typing import Optional
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
@@ -16,9 +17,54 @@ from gemini_recommender import GeminiRecommender
 from image_stitcher import ImageStitcher
 from discord_notifier import DiscordNotifier
 
+# Load env early
 load_dotenv()
 
-app = FastAPI(title="No Frills Cooking Recommendations")
+# Shared selector reference (initialized by lifespan)
+global_selector = None
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan handler to initialize and close a shared browser selector."""
+    global global_selector
+    try:
+        headless_env = os.getenv('HEADLESS', 'true').lower() == 'true'
+        preload = os.getenv('PRELOAD_BROWSER', 'false').lower() == 'true'
+        print(f"Config: headless={headless_env}, preload_browser={preload}")
+
+        # Create selector object but avoid blocking startup by default.
+        # If PRELOAD_BROWSER=true, initialize the driver in a background thread.
+        global_selector = FlippStoreSelector(headless=headless_env)
+
+        if preload:
+            async def _init_selector():
+                try:
+                    await asyncio.to_thread(global_selector.setup_driver)
+                    try:
+                        if getattr(global_selector, "driver", None):
+                            await asyncio.to_thread(global_selector.driver.get, "https://flipp.com/")
+                    except Exception as e:
+                        print(f"Warning: preload navigation failed: {e}")
+                except Exception as e:
+                    print(f"Warning: failed to setup driver in background: {e}")
+
+            # schedule background initialization without blocking startup
+            asyncio.create_task(_init_selector())
+
+        yield
+
+    finally:
+        try:
+            if global_selector:
+                print("Closing shared browser...")
+                global_selector.close()
+                global_selector = None
+        except Exception as e:
+            print(f"Error closing shared browser: {e}")
+
+
+app = FastAPI(title="No Frills Cooking Recommendations", lifespan=lifespan)
 
 # Get the parent directory (project root)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -55,6 +101,16 @@ latest_results = {
 async def read_root():
     """Serve the frontend"""
     return FileResponse(os.path.join(STATIC_DIR, "index.html"))
+
+
+@app.get("/favicon.ico")
+async def favicon():
+    """Return favicon if present, otherwise no-content to avoid 404 logs"""
+    fav_path = os.path.join(STATIC_DIR, "favicon.ico")
+    if os.path.exists(fav_path):
+        return FileResponse(fav_path)
+    return Response(status_code=204)
+
 
 @app.get("/api/config")
 async def get_default_config():
@@ -111,12 +167,15 @@ def generate_recommendations_task(request: RecommendationRequest):
         if not gemini_api_key:
             raise Exception("GEMINI_API_KEY not found in .env file")
         
-        # Step 1: Setup browser and set postal code
+        # Step 1: Use shared browser and set postal code
         latest_results["status_message"] = "Setting up browser and postal code..."
-        print(f"Setting up browser for postal code: {request.postal_code}")
-        selector = FlippStoreSelector(headless=request.headless)
-        selector.setup_driver()
-        
+        print(f"Using shared browser for postal code: {request.postal_code}")
+        # Prefer the pre-initialized global selector; fall back to creating a temporary one
+        selector = global_selector
+        if not selector:
+            selector = FlippStoreSelector(headless=request.headless)
+            selector.setup_driver()
+
         if not selector.select_store(postal_code=request.postal_code):
             raise Exception("Failed to set postal code")
         
@@ -174,8 +233,12 @@ def generate_recommendations_task(request: RecommendationRequest):
         latest_results["error"] = str(e)
         
     finally:
-        if selector:
-            selector.close()
+        # Do not close the shared selector; only close if we created a temporary one
+        try:
+            if selector and selector is not global_selector:
+                selector.close()
+        except Exception:
+            pass
 
 @app.post("/api/generate")
 async def generate_recommendations(request: RecommendationRequest, background_tasks: BackgroundTasks):
