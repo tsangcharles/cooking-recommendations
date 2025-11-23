@@ -224,6 +224,21 @@ def generate_recommendations_task(request: RecommendationRequest):
         
         print("Recommendations generated successfully!")
         
+        # Auto-send to Discord if webhook is configured
+        discord_webhook = os.getenv('DISCORD_WEBHOOK_URL')
+        if discord_webhook:
+            latest_results["status_message"] = "Sending to Discord..."
+            print("Auto-sending recommendations to Discord...")
+            try:
+                notifier = DiscordNotifier(discord_webhook)
+                if notifier.send_recommendations(recommendations, stitched_image):
+                    print("✓ Successfully auto-sent to Discord")
+                    latest_results["status_message"] = "Complete! Sent to Discord."
+                else:
+                    print("✗ Failed to auto-send to Discord")
+            except Exception as e:
+                print(f"✗ Error auto-sending to Discord: {e}")
+        
     except Exception as e:
         print(f"Error: {e}")
         import traceback
