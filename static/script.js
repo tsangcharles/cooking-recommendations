@@ -86,7 +86,8 @@ if (generateBtn) {
         num_people: parseInt(numPeople.value),
         num_meals: parseInt(numMeals.value),
         cuisine: cuisine.value.trim(),
-        headless: headless.checked
+        headless: headless.checked,
+        auto_send_discord: true
     };
     
     try {

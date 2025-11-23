@@ -83,6 +83,7 @@ class RecommendationRequest(BaseModel):
     num_meals: int = 7
     cuisine: str = "Chinese"
     headless: bool = True
+    auto_send_discord: bool = True
 
 class DiscordRequest(BaseModel):
     webhook_url: str
@@ -224,11 +225,11 @@ def generate_recommendations_task(request: RecommendationRequest):
         
         print("Recommendations generated successfully!")
         
-        # Auto-send to Discord if webhook is configured
+        # Auto-send to Discord if webhook is configured and auto_send is enabled
         discord_webhook = os.getenv('DISCORD_WEBHOOK_URL')
-        if discord_webhook:
+        if discord_webhook and request.auto_send_discord:
             latest_results["status_message"] = "Sending to Discord..."
-            print("Auto-sending recommendations to Discord...")
+            print(f"Auto-sending recommendations to Discord (webhook configured: {bool(discord_webhook)})...")
             try:
                 notifier = DiscordNotifier(discord_webhook)
                 if notifier.send_recommendations(recommendations, stitched_image):
@@ -238,6 +239,8 @@ def generate_recommendations_task(request: RecommendationRequest):
                     print("✗ Failed to auto-send to Discord")
             except Exception as e:
                 print(f"✗ Error auto-sending to Discord: {e}")
+        elif not discord_webhook and request.auto_send_discord:
+            print("⚠️  Auto-send requested but DISCORD_WEBHOOK_URL not configured in .env")
         
     except Exception as e:
         print(f"Error: {e}")
