@@ -2,6 +2,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
 import os
 from datetime import datetime
 from selenium.webdriver.chrome.options import Options
@@ -164,13 +165,22 @@ class FlippStoreSelector:
                             continue
                 return False
 
-            clicked = WebDriverWait(self.driver, 8, poll_frequency=0.25).until(find_and_click_start)
+            try:
+                clicked = WebDriverWait(self.driver, 8, poll_frequency=0.25).until(find_and_click_start)
+            except TimeoutException:
+                print("Start button not found or not clickable within timeout. Trying fallback.")
+                clicked = False
+
             if not clicked:
                 # As a last resort, press Enter on the input
                 try:
+                    print("Fallback: Pressing Enter on postal code input.")
                     postal_input.send_keys('\n')
                     clicked = True
-                except Exception:
+                    # Add a small wait for page to process the submission
+                    time.sleep(3)
+                except Exception as e:
+                    print(f"Fallback with Enter key failed: {e}")
                     clicked = False
 
             if not clicked:
