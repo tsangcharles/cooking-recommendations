@@ -21,7 +21,7 @@ I need help planning EASY meals and grocery shopping based on this No Frills fly
 
 Requirements:
 - Number of people: {num_people}
-- Number of meals to plan: {num_meals} meals, for each meal, there should be {num_people} dishes (almost like one per person)
+- Number of meals to plan: {num_meals} meals, for each meal, there should be {num_people} dishes (one per person)
 - Cuisine preference: {cuisine_preference} food, it should be genuine cuisine from that culture
 - Focus on items that are ON SALE in this flyer
 
@@ -32,7 +32,7 @@ Please analyze this flyer and provide:
 2. **Meal Plan**: Suggest {num_meals} {cuisine_preference} recipes/meals that can be made using the ingredients from the flyer. For each meal:
    - Meal name (Provide a chinese name as well)
    - Key ingredients (highlighting what's on sale from the flyer)
-   - Brief cooking instructions (2-3 sentences)
+   - Brief cooking instructions (2-3 sentences) with PRECEISE MEASUREMENTS for each ingredient.
    - Estimated servings ({num_people} people)
 
 Please be specific and practical. While it would be great to buy stuff from this flyer as these items are on sale, you do not need to limit yourself only to items shown in the flyer if you can suggest better alternatives that fit within a reasonable budget.
