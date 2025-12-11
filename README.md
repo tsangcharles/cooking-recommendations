@@ -86,8 +86,7 @@ Navigate to **http://localhost:8000** and enjoy the web interface!
    - Number of people
    - Number of meals
    - Cuisine preference
-   - Headless mode (recommended: on)
-3. **Click** "Generate Recommendations"
+3. **Click** "Generate Recommendations" 🍳
 4. **Wait** 2-3 minutes while the app:
    - Sets up browser and postal code
    - Downloads flyer images
@@ -122,7 +121,7 @@ Results are saved to:
 | `HEADLESS` | Run browser in headless mode (`true`/`false`) | `true` | ❌ No |
 | `DISCORD_WEBHOOK_URL` | Discord webhook for notifications | - | ❌ No |
 
-**Note:** When using the web interface, you can override any of these settings (except `GEMINI_API_KEY`) directly in the UI.
+**Note:** When using the web interface, you can override postal code, number of people, number of meals, and cuisine preference. The browser always runs in headless mode for better performance.
 
 ### Discord Integration (Optional)
 
@@ -179,12 +178,12 @@ output/
    - Calculates optimal rows/columns for readability
    - Creates one comprehensive flyer image
 
-4. **🤖 AI Analysis (Gemini)**
+4. **🤖 AI Analysis (Gemini 2.5 Flash)**
    - Uploads the complete flyer to Google Gemini
    - Analyzes items on sale with prices
-   - Generates meal plan based on your preferences
-   - Creates shopping list with all ingredients
-   - Provides cooking instructions for each meal
+   - Generates meal plan with multiple dishes per meal
+   - Creates detailed shopping list with quantities and prices
+   - Provides cooking instructions with precise measurements
 
 5. **✅ Results**
    - Displays in the web interface
@@ -276,7 +275,7 @@ docker compose down
 - **Backend**: FastAPI (Python)
 - **Frontend**: Vanilla JavaScript, HTML5, CSS3
 - **Browser Automation**: Selenium with Chrome
-- **AI**: Google Gemini 2.5 Flash
+- **AI**: Google Gemini 2.5 Flash Lite
 - **Container**: Docker with Docker Compose
 
 ## 📄 Project Structure
