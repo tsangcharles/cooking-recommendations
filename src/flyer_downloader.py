@@ -19,19 +19,39 @@ class FlyerDownloader:
             flyer_url = "https://flipp.com/search/No%20Frills"
             self.driver.get(flyer_url)
             
-            # Wait for page to load
+            # Wait for page to load and images to appear
             print("Waiting for flyer images to load...")
-            time.sleep(10)
-            
-            # Wait for page to be fully loaded
             try:
-                WebDriverWait(self.driver, 20).until(
+                # Wait for document to be ready
+                WebDriverWait(self.driver, 15).until(
                     lambda d: d.execute_script("return document.readyState") == "complete"
                 )
-                time.sleep(5)
+                
+                # Scroll down to trigger lazy-loading of images
+                print("Scrolling to load images...")
+                self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                time.sleep(1)
+                self.driver.execute_script("window.scrollTo(0, 0);")
+                time.sleep(1)
+                
+                # Wait for images to start loading (check if any extra_large images exist)
+                WebDriverWait(self.driver, 10).until(
+                    lambda d: d.execute_script("""
+                        var imgs = document.getElementsByTagName('img');
+                        var count = 0;
+                        for(var i = 0; i < imgs.length; i++) {
+                            if(imgs[i].src && imgs[i].src.includes('extra_large')) count++;
+                        }
+                        return count;
+                    """) > 0
+                )
+                # Brief wait for remaining images to populate
+                time.sleep(2)
                 print("Page loaded!")
             except Exception as e:
-                print(f"Timeout waiting for page: {e}")
+                print(f"Timeout waiting for images: {e}")
+                # Continue anyway - give it a bit more time
+                time.sleep(5)
             
             print(f"Current URL: {self.driver.current_url}")
             

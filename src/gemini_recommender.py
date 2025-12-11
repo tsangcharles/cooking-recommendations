@@ -5,7 +5,7 @@ import os
 class GeminiRecommender:
     def __init__(self, api_key):
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-2.5-flash')
+        self.model = genai.GenerativeModel('gemini-2.5-flash-lite')
         
     def get_recommendations(self, flyer_image_path, num_people=2, num_meals=7, cuisine_preference="Chinese"):
         """Get cooking and shopping recommendations from Gemini based on the flyer image"""
