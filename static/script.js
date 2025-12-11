@@ -143,28 +143,7 @@ function pollStatus() {
                 safeSetDisabled(generateBtn, false);
                 await displayRecommendations();
                 showSuccess('Recommendations generated successfully!');
-
-                // If user requested auto-send, try to send to Discord now
-                try {
-                    if (window.__autoSendToDiscord) {
-                        const webhookInput = document.getElementById('webhookUrl');
-                        const webhookUrl = webhookInput ? webhookInput.value.trim() : '';
-
-                        if (webhookUrl) {
-                            await sendToDiscord(webhookUrl);
-                        } else {
-                            // No webhook configured — prompt user with the modal. When they submit,
-                            // the form handler will call sendToDiscord.
-                            const modal = document.getElementById('discordModal');
-                            if (modal) modal.style.display = 'block';
-                        }
-                        // reset flag
-                        window.__autoSendToDiscord = false;
-                    }
-                } catch (err) {
-                    console.error('Auto-send to Discord failed:', err);
-                    showError('Auto-send to Discord failed: ' + (err.message || err));
-                }
+                // Auto-send is handled by backend, no need to send again from frontend
             } else if (status.status === 'error') {
                 clearInterval(statusPollingInterval);
                 const statusSection = document.getElementById('statusSection');
