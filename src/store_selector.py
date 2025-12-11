@@ -51,65 +51,22 @@ class FlippStoreSelector:
             if not current or "flipp.com" not in current:
                 print(f"Navigating to Flipp.com...")
                 self.driver.get("https://flipp.com/")
-                # Wait for page to load
-                time.sleep(2)
-            # Try to handle cookie/consent banners if present. Many sites render consent via JS;
-            # try a mix of CSS selectors and XPath text-matching to click common accept buttons.
+                time.sleep(0.5)
+            
+            # Quick consent handling - just check the most common button
             try:
-                accept_selectors = [
-                    'button[data-cy="consent-accept"]',
-                    'button[aria-label="Accept"]',
-                    'button.cky-btn-accept',
-                    'button[data-cky-tag="accept-button"]',
-                    'button[data-cky-tag="detail-accept-button"]',
-                ]
-
-                clicked_accept = False
-                for sel in accept_selectors:
-                    try:
-                        elems = self.driver.find_elements(By.CSS_SELECTOR, sel)
-                        for btn in elems:
-                            if btn and btn.is_displayed():
-                                print(f"Clicking consent button (css): {sel}")
-                                try:
-                                    btn.click()
-                                    time.sleep(1)
-                                    clicked_accept = True
-                                    break
-                                except Exception:
-                                    continue
-                        if clicked_accept:
-                            break
-                    except Exception:
-                        continue
-
-                # If not found by CSS, try XPath text search for common phrases (case-insensitive)
-                if not clicked_accept:
-                    xpath_variants = [
-                        "//button[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'accept')]",
-                        "//button[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'i agree')]",
-                        "//button[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'agree')]",
-                    ]
-                    for xp in xpath_variants:
-                        try:
-                            elems = self.driver.find_elements(By.XPATH, xp)
-                            for btn in elems:
-                                try:
-                                    if btn.is_displayed():
-                                        print(f"Clicking consent button (xpath): {xp}")
-                                        btn.click()
-                                        time.sleep(1)
-                                        clicked_accept = True
-                                        break
-                                except Exception:
-                                    continue
-                            if clicked_accept:
-                                break
-                        except Exception:
-                            continue
-
+                consent_btn = WebDriverWait(self.driver, 3).until(
+                    EC.element_to_be_clickable((By.CSS_SELECTOR, 'button.cky-btn-accept'))
+                )
+                print("Clicking consent button")
+                consent_btn.click()
+                time.sleep(0.3)
+            except TimeoutException:
+                # No consent banner found, continue
+                pass
             except Exception as e:
-                print(f"Consent handling encountered an error: {e}")
+                # Consent handling failed, but continue anyway
+                pass
 
             # Find the postal code input field and set value via JS
             print(f"Entering postal code: {postal_code}")

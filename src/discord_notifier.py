@@ -11,38 +11,47 @@ class DiscordNotifier:
         try:
             print(f"Sending recommendations to Discord...")
             
-            # Use embeds for better formatting and to handle long content
-            # Each embed description can hold up to 4096 characters
-            max_embed_length = 4000
+            # Use embeds for better formatting
+            # Discord limits: single embed = 4096 chars, total message embeds = 6000 chars
+            # If text is long, send multiple separate messages instead
+            max_embed_length = 3500  # Safe limit per embed
             
             if len(recommendations_text) > max_embed_length:
-                # Split into multiple embeds within a single message
+                # Split into multiple messages (not multiple embeds in one message)
                 chunks = [recommendations_text[i:i+max_embed_length] for i in range(0, len(recommendations_text), max_embed_length)]
                 
-                embeds = []
                 for i, chunk in enumerate(chunks):
-                    embeds.append({
-                        "title": f"🍽️ Your Weekly No Frills Meal Plan (Part {i+1}/{len(chunks)})",
-                        "description": chunk,
-                        "color": 5814783  # Blue color
-                    })
-                
-                payload = {"embeds": embeds}
+                    payload = {
+                        "embeds": [{
+                            "title": f"🍽️ Your Weekly No Frills Meal Plan (Part {i+1}/{len(chunks)})",
+                            "description": chunk,
+                            "color": 5814783
+                        }]
+                    }
+                    response = requests.post(self.webhook_url, json=payload)
+                    
+                    if response.status_code not in [200, 204]:
+                        print(f"✗ Failed to send part {i+1}: HTTP {response.status_code}")
+                        print(f"Response: {response.text}")
+                        return False
+                    
+                    # Wait between messages to avoid rate limit
+                    if i < len(chunks) - 1:
+                        time.sleep(0.5)
             else:
                 payload = {
                     "embeds": [{
                         "title": "🍽️ Your Weekly No Frills Meal Plan",
                         "description": recommendations_text,
-                        "color": 5814783  # Blue color
+                        "color": 5814783
                     }]
                 }
-            
-            response = requests.post(self.webhook_url, json=payload)
-            
-            if response.status_code not in [200, 204]:
-                print(f"✗ Failed to send message: HTTP {response.status_code}")
-                print(f"Response: {response.text}")
-                return False
+                response = requests.post(self.webhook_url, json=payload)
+                
+                if response.status_code not in [200, 204]:
+                    print(f"✗ Failed to send message: HTTP {response.status_code}")
+                    print(f"Response: {response.text}")
+                    return False
             
             # Send flyer image as attachment if available (with rate limit delay)
             if flyer_image_path and os.path.exists(flyer_image_path):

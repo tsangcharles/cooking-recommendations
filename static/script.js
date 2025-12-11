@@ -15,7 +15,6 @@ async function loadDefaultConfig() {
         document.getElementById('numPeople').value = config.num_people;
         document.getElementById('numMeals').value = config.num_meals;
         document.getElementById('cuisine').value = config.cuisine;
-        document.getElementById('headless').checked = config.headless;
         
         // Pre-fill Discord webhook if available
         if (config.discord_webhook_url) {
@@ -74,9 +73,8 @@ if (generateBtn) {
     const numPeople = document.getElementById('numPeople');
     const numMeals = document.getElementById('numMeals');
     const cuisine = document.getElementById('cuisine');
-    const headless = document.getElementById('headless');
     
-    if (!postalCode || !numPeople || !numMeals || !cuisine || !headless) {
+    if (!postalCode || !numPeople || !numMeals || !cuisine) {
         showError('Form elements not found');
         return;
     }
@@ -86,7 +84,7 @@ if (generateBtn) {
         num_people: parseInt(numPeople.value),
         num_meals: parseInt(numMeals.value),
         cuisine: cuisine.value.trim(),
-        headless: headless.checked,
+        headless: true,
         auto_send_discord: true
     };
     
