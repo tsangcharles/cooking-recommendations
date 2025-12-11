@@ -111,80 +111,27 @@ class FlippStoreSelector:
             except Exception as e:
                 print(f"Consent handling encountered an error: {e}")
 
-            # Find the postal code input field (fast single wait) and set value via JS
+            # Find the postal code input field and set value via JS
             print(f"Entering postal code: {postal_code}")
-            selectors = [
-                'input[data-cy="postalCodeInput"]',
-                'input[name="postalCode"]',
-                'input[placeholder*="Postal"]',
-                'input[type="text"]'
-            ]
+            postal_input = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'input[data-cy="postalCodeInput"]'))
+            )
 
-            # Use a WebDriverWait that looks for any of the selectors and allow a longer timeout
-            def find_any_input(driver):
-                for s in selectors:
-                    elems = driver.find_elements(By.CSS_SELECTOR, s)
-                    if elems:
-                        return elems[0]
-                return False
+            # Set input value using JS (faster than send_keys)
+            self.driver.execute_script(
+                "arguments[0].focus(); arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('input', {bubbles:true}));",
+                postal_input,
+                postal_code,
+            )
+            time.sleep(0.5)  # Brief wait for UI to update
 
-            postal_input = WebDriverWait(self.driver, 12, poll_frequency=0.3).until(find_any_input)
-            if not postal_input:
-                raise Exception("Postal input element not found with any selector")
-
-            # Set input value using JS to be faster than send_keys, and dispatch input events
-            try:
-                self.driver.execute_script(
-                    "arguments[0].focus(); arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('input', {bubbles:true}));",
-                    postal_input,
-                    postal_code,
-                )
-            except Exception:
-                # Fallback to send_keys if JS approach fails
-                postal_input.clear()
-                postal_input.send_keys(postal_code)
-
-            # Try to click the start button quickly using one wait for any selector
+            # Click the start button
             print("Clicking Start Saving button...")
-            start_selectors = [
-                'a[data-cy="startSaving"]',
-                'button[data-cy="startSaving"]',
-                'a[href*="start"]',
-                'button[type="submit"]'
-            ]
-
-            def find_and_click_start(driver):
-                for s in start_selectors:
-                    elems = driver.find_elements(By.CSS_SELECTOR, s)
-                    for el in elems:
-                        try:
-                            if el.is_displayed() and el.is_enabled():
-                                el.click()
-                                return True
-                        except Exception:
-                            continue
-                return False
-
-            try:
-                clicked = WebDriverWait(self.driver, 8, poll_frequency=0.25).until(find_and_click_start)
-            except TimeoutException:
-                print("Start button not found or not clickable within timeout. Trying fallback.")
-                clicked = False
-
-            if not clicked:
-                # As a last resort, press Enter on the input
-                try:
-                    print("Fallback: Pressing Enter on postal code input.")
-                    postal_input.send_keys('\n')
-                    clicked = True
-                    # Add a small wait for page to process the submission
-                    time.sleep(3)
-                except Exception as e:
-                    print(f"Fallback with Enter key failed: {e}")
-                    clicked = False
-
-            if not clicked:
-                raise Exception("Start button not found / could not be clicked")
+            start_button = WebDriverWait(self.driver, 10).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, 'a[data-cy="startSaving"]'))
+            )
+            start_button.click()
+            time.sleep(1)  # Brief wait for navigation
 
             print("Postal code set successfully!")
             return True
