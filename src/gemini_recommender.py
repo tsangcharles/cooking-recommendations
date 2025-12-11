@@ -17,7 +17,7 @@ class GeminiRecommender:
             
             # Create the prompt
             prompt = f"""
-I need help planning EASY meals and grocery shopping based on this No Frills flyer.
+Analyze this No Frills flyer and create an EASY meal plan. Output ONLY the Shopping List and Meal Plan sections. No introductions, conclusions, or extra commentary.
 
 Requirements:
 - Number of people: {num_people}
@@ -25,17 +25,23 @@ Requirements:
 - Cuisine preference: {cuisine_preference} food, it should be genuine cuisine from that culture
 - Focus on items that are ON SALE in this flyer
 
-Please analyze this flyer and provide:
+Format your response EXACTLY as follows (no additional text):
 
-1. **Shopping List**: List specific items from the flyer that are on sale that would be good for cooking {cuisine_preference} food. Include the prices if visible. Shopping list must be comprehensive so everything in the meal plan can be made.
+**Shopping List**
+For each item, you MUST specify the quantity to buy (e.g., "2 lbs chicken thighs", "3 bunches green onions", "1 package tofu"). List items from the flyer that are on sale for cooking {cuisine_preference} food. Include prices if visible. Calculate quantities based on making {num_meals} meals for {num_people} people. Be comprehensive so everything in the meal plan can be made.
 
-2. **Meal Plan**: Suggest {num_meals} {cuisine_preference} recipes/meals that can be made using the ingredients from the flyer. For each meal:
-   - Meal name (Provide a chinese name as well)
-   - Key ingredients (highlighting what's on sale from the flyer)
-   - Brief cooking instructions (2-3 sentences) with PRECEISE MEASUREMENTS for each ingredient.
-   - Estimated servings ({num_people} people)
+Example format:
+- 2 lbs Ground Pork ($X.XX)
+- 3 lbs Chicken Thighs ($X.XX)
+- 1 package Firm Tofu ($X.XX)
 
-Please be specific and practical. While it would be great to buy stuff from this flyer as these items are on sale, you do not need to limit yourself only to items shown in the flyer if you can suggest better alternatives that fit within a reasonable budget.
+**Meal Plan**
+Suggest {num_meals} {cuisine_preference} meals. For EACH meal, create {num_people} different dishes. For each dish include:
+- Dish name (Provide a name in its native language if possible)
+- Key ingredients (highlighting what's on sale from the flyer)
+- Brief cooking instructions (2-3 sentences) with PRECISE MEASUREMENTS for each ingredient
+
+Be specific and practical. While prioritizing sale items from the flyer, you may suggest other ingredients if they fit within a reasonable budget.
 """
             
             # Generate content
