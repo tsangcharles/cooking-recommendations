@@ -74,14 +74,14 @@ class FlippStoreSelector:
             selectors = [
                 'input[data-cy="postalCodeInput"]',
                 'input[placeholder*="postal" i]',
-                'input[placeholder*="ZIP" i]',
-                'input[type="text"][name*="postal" i]',
                 'input[type="text"]'
             ]
             
-            for selector in selectors:
+            for i, selector in enumerate(selectors):
                 try:
-                    postal_input = WebDriverWait(self.driver, 5).until(
+                    # Use shorter timeout for fallbacks (2s instead of 5s)
+                    timeout = 6 if i == 0 else 2
+                    postal_input = WebDriverWait(self.driver, timeout).until(
                         EC.presence_of_element_located((By.CSS_SELECTOR, selector))
                     )
                     print(f"Found postal input with selector: {selector}")
@@ -92,29 +92,21 @@ class FlippStoreSelector:
             if not postal_input:
                 raise Exception("Could not find postal code input field with any selector")
 
-            # Set input value using multiple methods for compatibility
-            try:
-                postal_input.clear()
-                time.sleep(0.2)
-            except:
-                pass
-            
-            # Method 1: JavaScript
+            # Set input value using JavaScript (fastest method)
             self.driver.execute_script(
                 "arguments[0].focus(); arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('input', {bubbles:true})); arguments[0].dispatchEvent(new Event('change', {bubbles:true}));",
                 postal_input,
                 postal_code,
             )
-            time.sleep(0.3)
+            time.sleep(0.2)
             
-            # Method 2: Fallback to send_keys if value wasn't set
+            # Verify and fallback to send_keys only if needed
             current_value = postal_input.get_attribute('value')
             if not current_value or current_value != postal_code:
                 print("JS method didn't work, trying send_keys...")
+                postal_input.clear()
                 postal_input.send_keys(postal_code)
-                time.sleep(0.3)
-            
-            print(f"Postal code input value: {postal_input.get_attribute('value')}")
+                time.sleep(0.2)
 
             # Click the start button with multiple fallback selectors
             print("Clicking Start Saving button...")
@@ -122,18 +114,14 @@ class FlippStoreSelector:
             button_selectors = [
                 'a[data-cy="startSaving"]',
                 'button[data-cy="startSaving"]',
-                'a:has-text("Start Saving")',
-                'button:has-text("Start Saving")',
-                'a[href*="/flyers"]',
-                'button[type="submit"]'
+                'a[href*="/flyers"]'
             ]
             
-            for selector in button_selectors:
+            for i, selector in enumerate(button_selectors):
                 try:
-                    # Skip selectors with :has-text (not supported in CSS)
-                    if ':has-text' in selector:
-                        continue
-                    start_button = WebDriverWait(self.driver, 5).until(
+                    # Use shorter timeout for fallbacks (2s instead of 5s)
+                    timeout = 6 if i == 0 else 2
+                    start_button = WebDriverWait(self.driver, timeout).until(
                         EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
                     )
                     print(f"Found start button with selector: {selector}")
@@ -144,7 +132,7 @@ class FlippStoreSelector:
             if not start_button:
                 # Try XPath for text-based search as last resort
                 try:
-                    start_button = WebDriverWait(self.driver, 5).until(
+                    start_button = WebDriverWait(self.driver, 3).until(
                         EC.element_to_be_clickable((By.XPATH, "//a[contains(text(), 'Start')] | //button[contains(text(), 'Start')]"))
                     )
                     print("Found start button with XPath")
@@ -152,16 +140,15 @@ class FlippStoreSelector:
                     raise Exception("Could not find Start Saving button with any selector")
             
             start_button.click()
-            time.sleep(1.5)  # Wait for navigation
+            time.sleep(1)  # Wait for navigation
 
-            # Verify that we've successfully navigated (optional but helpful)
+            # Quick verification that navigation started
             try:
-                WebDriverWait(self.driver, 10).until(
-                    lambda d: "flyers" in d.current_url.lower() or len(d.find_elements(By.CSS_SELECTOR, '[data-testid*="flyer"], .flyer-item, article')) > 0
+                WebDriverWait(self.driver, 5).until(
+                    lambda d: "flyers" in d.current_url.lower()
                 )
-                print(f"Successfully navigated to: {self.driver.current_url}")
             except TimeoutException:
-                print(f"Warning: Timeout waiting for flyers page, but continuing. Current URL: {self.driver.current_url}")
+                pass  # Continue anyway, flyer_downloader will handle if page isn't ready
 
             print("Postal code set successfully!")
             return True
