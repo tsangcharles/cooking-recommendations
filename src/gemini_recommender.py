@@ -15,6 +15,11 @@ class GeminiRecommender:
             # Open the image
             img = Image.open(flyer_image_path)
             
+            # Build special notes requirement if provided
+            special_notes_requirement = ""
+            if special_notes and special_notes.strip():
+                special_notes_requirement = f"- IMPORTANT: {special_notes.strip()}"
+            
             # Create the prompt
             prompt = f"""
 Analyze this No Frills flyer and create an EASY meal plan. Output ONLY the Shopping List and Meal Plan sections. No introductions, conclusions, or extra commentary.
@@ -24,6 +29,7 @@ Requirements:
 - Number of meals to plan: {num_meals} meals, for each meal, there should be {num_people} dishes (one per person)
 - Cuisine preference: {cuisine_preference} food, it should be genuine cuisine from that culture
 - Focus on items that are ON SALE in this flyer
+{special_notes_requirement}
 
 Format your response EXACTLY as follows (no additional text):
 
@@ -40,13 +46,9 @@ Suggest {num_meals} {cuisine_preference} meals. For EACH meal, create {num_peopl
 - Dish name (Provide a name in its native language if possible)
 - Key ingredients (highlighting what's on sale from the flyer)
 - Brief cooking instructions (2-3 sentences) with PRECISE MEASUREMENTS for each ingredient
+
+Be specific and practical. While prioritizing sale items from the flyer, you may suggest other ingredients if they fit within a reasonable budget.
 """
-            
-            # Add special notes section if provided
-            if special_notes and special_notes.strip():
-                prompt += f"\n**Special Notes**\n{special_notes.strip()}\n"
-            
-            prompt += "\nBe specific and practical. While prioritizing sale items from the flyer, you may suggest other ingredients if they fit within a reasonable budget.\n"
             
             # Generate content
             response = self.model.generate_content([prompt, img])
