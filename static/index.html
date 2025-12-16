@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>No Frills Cooking Recommendations 🍽️</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
+
 <body>
     <div class="container">
         <header>
@@ -36,7 +38,14 @@
 
                         <div class="form-group">
                             <label for="cuisine">Cuisine Preference</label>
-                            <input type="text" id="cuisine" name="cuisine" placeholder="Chinese, Italian, Mexican..." required>
+                            <input type="text" id="cuisine" name="cuisine" placeholder="Chinese, Italian, Mexican..."
+                                required>
+                        </div>
+
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label for="specialNotes">Special Notes (Optional)</label>
+                            <input type="text" id="specialNotes" name="specialNotes"
+                                placeholder="Any dietary restrictions, ingredient preferences, or special requests...">
                         </div>
                     </div>
                 </form>
@@ -61,13 +70,13 @@
             <!-- Results Panel -->
             <section class="results-panel" id="resultsPanel" style="display: none;">
                 <h2>✨ Your Meal Plan</h2>
-                
+
                 <div class="results-content">
                     <div class="flyer-section" id="flyerSection" style="display: none;">
                         <h3>📄 Flyer</h3>
                         <img id="flyerImage" alt="No Frills Flyer" class="flyer-image">
                     </div>
-                    
+
                     <div class="recommendations-section">
                         <h3>🍳 Recommendations</h3>
                         <div id="recommendations" class="recommendations-text"></div>
@@ -90,9 +99,11 @@
             <form id="discordForm">
                 <div class="form-group">
                     <label for="webhookUrl">Discord Webhook URL</label>
-                    <input type="url" id="webhookUrl" name="webhookUrl" 
-                           placeholder="https://discord.com/api/webhooks/..." required>
-                    <small>Don't have a webhook? <a href="https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks" target="_blank">Learn how to create one</a></small>
+                    <input type="url" id="webhookUrl" name="webhookUrl"
+                        placeholder="https://discord.com/api/webhooks/..." required>
+                    <small>Don't have a webhook? <a
+                            href="https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks"
+                            target="_blank">Learn how to create one</a></small>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
@@ -104,4 +115,5 @@
 
     <script src="/static/script.js"></script>
 </body>
+
 </html>

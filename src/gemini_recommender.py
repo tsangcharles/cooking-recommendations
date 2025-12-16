@@ -7,7 +7,7 @@ class GeminiRecommender:
         genai.configure(api_key=api_key)
         self.model = genai.GenerativeModel('gemini-2.5-flash-lite')
         
-    def get_recommendations(self, flyer_image_path, num_people=2, num_meals=7, cuisine_preference="Chinese"):
+    def get_recommendations(self, flyer_image_path, num_people=2, num_meals=7, cuisine_preference="Chinese", special_notes=""):
         """Get cooking and shopping recommendations from Gemini based on the flyer image"""
         try:
             print("Analyzing flyer with Gemini AI...")
@@ -40,9 +40,13 @@ Suggest {num_meals} {cuisine_preference} meals. For EACH meal, create {num_peopl
 - Dish name (Provide a name in its native language if possible)
 - Key ingredients (highlighting what's on sale from the flyer)
 - Brief cooking instructions (2-3 sentences) with PRECISE MEASUREMENTS for each ingredient
-
-Be specific and practical. While prioritizing sale items from the flyer, you may suggest other ingredients if they fit within a reasonable budget.
 """
+            
+            # Add special notes section if provided
+            if special_notes and special_notes.strip():
+                prompt += f"\n**Special Notes**\n{special_notes.strip()}\n"
+            
+            prompt += "\nBe specific and practical. While prioritizing sale items from the flyer, you may suggest other ingredients if they fit within a reasonable budget.\n"
             
             # Generate content
             response = self.model.generate_content([prompt, img])

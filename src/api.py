@@ -82,6 +82,7 @@ class RecommendationRequest(BaseModel):
     num_people: int = 2
     num_meals: int = 7
     cuisine: str = "Chinese"
+    special_notes: str = ""
     headless: bool = True
     auto_send_discord: bool = True
 
@@ -206,7 +207,8 @@ def generate_recommendations_task(request: RecommendationRequest):
             flyer_image_path=stitched_image,
             num_people=request.num_people,
             num_meals=request.num_meals,
-            cuisine_preference=request.cuisine
+            cuisine_preference=request.cuisine,
+            special_notes=request.special_notes
         )
         
         if not recommendations:

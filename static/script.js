@@ -10,12 +10,12 @@ async function loadDefaultConfig() {
     try {
         const response = await fetch('/api/config');
         const config = await response.json();
-        
+
         document.getElementById('postalCode').value = config.postal_code;
         document.getElementById('numPeople').value = config.num_people;
         document.getElementById('numMeals').value = config.num_meals;
         document.getElementById('cuisine').value = config.cuisine;
-        
+
         // Pre-fill Discord webhook if available
         if (config.discord_webhook_url) {
             document.getElementById('webhookUrl').value = config.discord_webhook_url;
@@ -30,7 +30,7 @@ async function checkForExistingResults() {
     try {
         const response = await fetch('/api/status');
         const status = await response.json();
-        
+
         if (status.has_results) {
             await displayRecommendations();
             setDiscordBtnDisabled(false);
@@ -62,67 +62,69 @@ function safeSetDisabled(elOrId, state) {
 const generateBtn = document.getElementById('generateBtn');
 if (generateBtn) {
     generateBtn.addEventListener('click', async () => {
-    const form = document.getElementById('configForm');
-    
-    if (!form.checkValidity()) {
-        form.reportValidity();
-        return;
-    }
-    
-    const postalCode = document.getElementById('postalCode');
-    const numPeople = document.getElementById('numPeople');
-    const numMeals = document.getElementById('numMeals');
-    const cuisine = document.getElementById('cuisine');
-    
-    if (!postalCode || !numPeople || !numMeals || !cuisine) {
-        showError('Form elements not found');
-        return;
-    }
-    
-    const request = {
-        postal_code: postalCode.value.trim(),
-        num_people: parseInt(numPeople.value),
-        num_meals: parseInt(numMeals.value),
-        cuisine: cuisine.value.trim(),
-        headless: true,
-        auto_send_discord: true
-    };
-    
-    try {
-    safeSetDisabled(generateBtn, true);
-    setDiscordBtnDisabled(true);
-        const resultsPanel = document.getElementById('resultsPanel');
-        if (resultsPanel) resultsPanel.style.display = 'none';
-        const statusSection = document.getElementById('statusSection');
-        const statusText = document.getElementById('statusText');
-        if (statusSection) statusSection.style.display = 'block';
-        if (statusText) statusText.textContent = 'Initializing...';
-        
-        const response = await fetch('/api/generate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(request)
-        });
-        
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || 'Failed to start generation');
-        }
-        
-        // Mark that we want to auto-send to Discord when generation completes
-        window.__autoSendToDiscord = true;
+        const form = document.getElementById('configForm');
 
-        // Start polling for status
-        pollStatus();
-        
-    } catch (error) {
-        showError(error.message);
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        const postalCode = document.getElementById('postalCode');
+        const numPeople = document.getElementById('numPeople');
+        const numMeals = document.getElementById('numMeals');
+        const cuisine = document.getElementById('cuisine');
+        const specialNotes = document.getElementById('specialNotes');
+
+        if (!postalCode || !numPeople || !numMeals || !cuisine) {
+            showError('Form elements not found');
+            return;
+        }
+
+        const request = {
+            postal_code: postalCode.value.trim(),
+            num_people: parseInt(numPeople.value),
+            num_meals: parseInt(numMeals.value),
+            cuisine: cuisine.value.trim(),
+            special_notes: specialNotes ? specialNotes.value.trim() : '',
+            headless: true,
+            auto_send_discord: true
+        };
+
+        try {
+            safeSetDisabled(generateBtn, true);
+            setDiscordBtnDisabled(true);
+            const resultsPanel = document.getElementById('resultsPanel');
+            if (resultsPanel) resultsPanel.style.display = 'none';
+            const statusSection = document.getElementById('statusSection');
+            const statusText = document.getElementById('statusText');
+            if (statusSection) statusSection.style.display = 'block';
+            if (statusText) statusText.textContent = 'Initializing...';
+
+            const response = await fetch('/api/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(request)
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'Failed to start generation');
+            }
+
+            // Mark that we want to auto-send to Discord when generation completes
+            window.__autoSendToDiscord = true;
+
+            // Start polling for status
+            pollStatus();
+
+        } catch (error) {
+            showError(error.message);
             safeSetDisabled(generateBtn, false);
-        const statusSection = document.getElementById('statusSection');
-        if (statusSection) statusSection.style.display = 'none';
-    }
-});
-    }
+            const statusSection = document.getElementById('statusSection');
+            if (statusSection) statusSection.style.display = 'none';
+        }
+    });
+}
 
 // Poll for status updates
 let statusPollingInterval = null;
@@ -132,7 +134,7 @@ function pollStatus() {
         try {
             const response = await fetch('/api/status');
             const status = await response.json();
-            
+
             if (status.status === 'processing') {
                 const statusText = document.getElementById('statusText');
                 if (statusText) statusText.textContent = status.status_message || 'Processing...';
@@ -163,9 +165,9 @@ function startStatusPolling() {
         try {
             const response = await fetch('/api/status');
             const status = await response.json();
-            
+
             if (status.status === 'processing' && statusPollingInterval === null) {
-                        safeSetDisabled(generateBtn, true);
+                safeSetDisabled(generateBtn, true);
                 const statusSection = document.getElementById('statusSection');
                 const statusText = document.getElementById('statusText');
                 if (statusSection) statusSection.style.display = 'block';
@@ -183,12 +185,12 @@ async function displayRecommendations() {
     try {
         const response = await fetch('/api/recommendations');
         const data = await response.json();
-        
+
         const recommendations = document.getElementById('recommendations');
         const resultsPanel = document.getElementById('resultsPanel');
         if (recommendations) recommendations.textContent = data.recommendations;
         if (resultsPanel) resultsPanel.style.display = 'block';
-        
+
         // Show flyer image
         if (data.flyer_image) {
             const flyerImage = document.getElementById('flyerImage');
@@ -196,13 +198,13 @@ async function displayRecommendations() {
             if (flyerImage) flyerImage.src = `/api/flyer-image?t=${Date.now()}`;
             if (flyerSection) flyerSection.style.display = 'block';
         }
-        
+
         // Enable Discord button (no-op if button was removed)
         setDiscordBtnDisabled(false);
-        
+
         // Scroll to results
         if (resultsPanel) resultsPanel.scrollIntoView({ behavior: 'smooth' });
-        
+
     } catch (error) {
         console.error('Error displaying recommendations:', error);
         showError('Failed to load recommendations');
@@ -267,35 +269,35 @@ async function sendToDiscord(webhookUrl) {
 const discordForm = document.getElementById('discordForm');
 if (discordForm) {
     discordForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
+        e.preventDefault();
 
-    const webhookUrlInput = document.getElementById('webhookUrl');
-    if (!webhookUrlInput) return;
-    const webhookUrl = webhookUrlInput.value.trim();
+        const webhookUrlInput = document.getElementById('webhookUrl');
+        if (!webhookUrlInput) return;
+        const webhookUrl = webhookUrlInput.value.trim();
 
-    if (!webhookUrl) {
-        showError('Please enter a Discord webhook URL');
-        return;
-    }
+        if (!webhookUrl) {
+            showError('Please enter a Discord webhook URL');
+            return;
+        }
 
-    try {
-        const submitBtn = e.target.querySelector('button[type="submit"]');
-        safeSetDisabled(submitBtn, true);
-        if (submitBtn) submitBtn.textContent = 'Sending...';
+        try {
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            safeSetDisabled(submitBtn, true);
+            if (submitBtn) submitBtn.textContent = 'Sending...';
 
-        await sendToDiscord(webhookUrl);
+            await sendToDiscord(webhookUrl);
 
-        const modal = document.getElementById('discordModal');
-        if (modal) modal.style.display = 'none';
+            const modal = document.getElementById('discordModal');
+            if (modal) modal.style.display = 'none';
 
-        safeSetDisabled(submitBtn, false);
-        if (submitBtn) submitBtn.textContent = 'Send';
-    } catch (error) {
-        showError(error.message);
-        const submitBtn = e.target.querySelector('button[type="submit"]');
-        safeSetDisabled(submitBtn, false);
-        if (submitBtn) submitBtn.textContent = 'Send';
-    }
+            safeSetDisabled(submitBtn, false);
+            if (submitBtn) submitBtn.textContent = 'Send';
+        } catch (error) {
+            showError(error.message);
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            safeSetDisabled(submitBtn, false);
+            if (submitBtn) submitBtn.textContent = 'Send';
+        }
     });
 }
 
@@ -312,14 +314,14 @@ function showAlert(message, type) {
     // Remove any existing alerts
     const existingAlerts = document.querySelectorAll('.alert');
     existingAlerts.forEach(alert => alert.remove());
-    
+
     const alert = document.createElement('div');
     alert.className = `alert alert-${type}`;
     alert.textContent = message;
-    
+
     const main = document.querySelector('main');
     main.insertBefore(alert, main.firstChild);
-    
+
     // Auto-remove after 5 seconds
     setTimeout(() => {
         alert.style.opacity = '0';

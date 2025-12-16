@@ -107,6 +107,11 @@ section {
     background: white;
 }
 
+#specialNotes {
+    padding: 16px 20px;
+    font-size: 1.05rem;
+}
+
 .form-group input:focus {
     outline: none;
     border-color: var(--primary);
@@ -213,7 +218,9 @@ section {
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .results-panel {
@@ -299,6 +306,7 @@ footer {
         transform: translateY(-50px);
         opacity: 0;
     }
+
     to {
         transform: translateY(0);
         opacity: 1;
@@ -357,37 +365,37 @@ footer {
     body {
         padding: 10px;
     }
-    
+
     header h1 {
         font-size: 1.8rem;
     }
-    
+
     .subtitle {
         font-size: 1rem;
     }
-    
+
     main {
         padding: 20px;
     }
-    
+
     .config-panel,
     .results-panel {
         padding: 20px;
     }
-    
+
     .form-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .actions {
         flex-direction: column;
     }
-    
+
     .btn {
         width: 100%;
         justify-content: center;
     }
-    
+
     .modal-content {
         margin: 20% auto;
         padding: 30px;
